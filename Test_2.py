@@ -6,8 +6,8 @@ from hashlib import sha256
 import requests
 
 APIURL = "https://open-api.bingx.com"
-APIKEY = "0AmO4AG3tJUhRKEcnM7UTwVSeZ3XQyWnTNQSDhGfKyn6D6yp9FKHLs8wz2iEhVUNswyrawOvcHkE3IWiOaewJQ"
-SECRETKEY = "ukvwXsBH4tzk2VCB9mVuuI83MtNOTIdlymfKRQUeKnEwNGdtegJx7HgIgkOg88Blb08LOjhNLFQO9ySqaQbw"
+APIKEY = ''
+SECRETKEY = ''
 
 
 def demo(symbol, side, positionSide, leverage, quantity):
@@ -59,7 +59,6 @@ def get_price(coin):
 
     paramsStr_balance = parseParam(paramsMap_balance)
     return send_request(method, path, paramsStr_balance, payload)
-
 
 def get_min_price():
     payload = {}

@@ -8,8 +8,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardRemove, Message
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-
 from Test_2 import demo, get_balance, get_price, get_min_price
+import Test_2
 
 API_TOKEN = '7057397327:AAEhF8YpnrJTYPUo58RGTXDT3ZbHIaoj1J4'
 
@@ -32,23 +32,60 @@ class Form(StatesGroup):
     lev_data = []
 
 
+class Api(StatesGroup):
+    apikey = State()
+    secretkey = State()
+
+
 @form_router.message(Command('start'))
 @form_router.message(F.text == 'Домой')
 async def cmd_start(message: Message, state: FSMContext):
-    await state.clear()
-    balance = float(get_balance()['data']['balance']['balance'])
-    if not balance:
-        await message.answer('Ваш баланс равен 0, пополните баланс и попробуйте снова',
-                             reply_markup=builder_home_ready)
+    data = await state.update_data()
+    if (data.get('apikey') and data.get('secretkey')) or (Test_2.APIKEY and Test_2.SECRETKEY):
+        await state.clear()
+        balance = float(get_balance()['data']['balance']['balance'])
+        if not balance:
+            await message.answer('Ваш баланс равен 0, пополните баланс и попробуйте снова',
+                                 reply_markup=builder_home_ready)
+        else:
+            Form.balance = balance
+            builder = ReplyKeyboardBuilder()
+            builder.add(types.KeyboardButton(text='BUY'))
+            builder.add(types.KeyboardButton(text="SELL"))
+            builder.add(types.KeyboardButton(text="Домой"))
+            builder.adjust(2)
+            await state.set_state(Form.operation)
+            await message.answer('Выберите операцию', reply_markup=builder.as_markup(resize_keyboard=True))
     else:
-        Form.balance = balance
-        builder = ReplyKeyboardBuilder()
-        builder.add(types.KeyboardButton(text='BUY'))
-        builder.add(types.KeyboardButton(text="SELL"))
-        builder.add(types.KeyboardButton(text="Домой"))
-        builder.adjust(2)
-        await state.set_state(Form.operation)
-        await message.answer('Выберите операцию', reply_markup=builder.as_markup(resize_keyboard=True))
+        await message.answer('Введите Apikey')
+        await state.set_state(Api.apikey)
+
+
+@form_router.message(Api.apikey)
+async def get_secret(message: Message, state: FSMContext):
+    await state.update_data(apikey=message.text)
+    await message.answer('Введите secretkey')
+    await state.set_state(Api.secretkey)
+
+
+@form_router.message(Api.secretkey)
+async def check_keys(message: Message, state: FSMContext):
+    data = await state.update_data(secretkey=message.text)
+
+    try:
+        Test_2.APIKEY = data['apikey']
+        Test_2.SECRETKEY = data['secretkey']
+        a = get_balance()
+        if not a['msg']:
+            await message.answer('Вы успешно зарегистрированы', reply_markup=builder_home_ready)
+        else:
+            await message.answer('Вы ввели неправильные ключи доступа')
+            await message.answer('Введите apikey')
+            await state.set_state(Api.apikey)
+    except Exception:
+        await message.answer('Вы ввели неправильные ключи доступа')
+        await message.answer('Введите apikey')
+        await state.set_state(Api.apikey)
 
 
 @form_router.message(Form.operation)
@@ -172,7 +209,7 @@ async def crypto_all(message: Message, state: FSMContext):
 
     await state.clear()
 
-    # print(data)
+    print(data)
 
     quantity = (Form.balance * (data['margin'] / 100)) / Form.price
     try:
