@@ -11,7 +11,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from Test_2 import demo, get_balance, get_price, get_min_price
 import Test_2
 
-API_TOKEN = '7057397327:AAEhF8YpnrJTYPUo58RGTXDT3ZbHIaoj1J4'
+API_TOKEN = ''
 
 form_router = Router()
 
